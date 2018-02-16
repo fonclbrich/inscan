@@ -100,7 +100,7 @@ void USBresume()
 
 void USBpause()
 {
-	USB->DADDR ^= (USB->DADDR & USB_DADDR_EF);
+	USB->DADDR = (USB->DADDR & ~USB_DADDR_EF);
 }
 
 void USBsetAddress(uint8_t newAddress)
@@ -112,7 +112,7 @@ void USBconfigEPs(USB_EP_block_t *EPs, int nEP)
 {
 	int addrOffs = 0x0040;
 
-	while (--nEP != 0)
+	while (nEP-- != 0)
 	{
 		uint16_t epr = EPs[nEP].EPid | EPs[nEP].features | USB_CLEAR_MASK;
 
@@ -190,11 +190,11 @@ void USB_LP_CAN1_RX0_IRQHandler()
     {
         /* Reset Request */
 #ifdef USBAppCallback
+    	USB->ISTR = ~USB_ISTR_RESET; // Clear interrupt
     	USBAppCallback(USBresetCmd);
 #else
 #error "Implementation required for USB Reset without Callback."
 #endif
-    	USB->ISTR = ~USB_ISTR_RESET; // Clear interrupt
     	return;
     }
 
@@ -217,9 +217,21 @@ void USB_LP_CAN1_RX0_IRQHandler()
 #else
 #error "Implementation required for USB Reset without Callback."
 #endif
-    USB->ISTR = ~USB_ISTR_RESET; // Clear interrupt
 }
 
+uint16_t USBstatusReg(int EPid)
+{
+	return USB_EP(EPid);
+}
+
+uint16_t USBglobalReg()
+{
+	return USB->ISTR;
+}
+
+uint16_t USBaddr() {return USB->DADDR;}
+
+#ifdef SVENBERTIL
 #ifdef DEBUG_USB
 void dropUSBSetupPacket(Padded_USB_setup_packet_t *setupPacket)
 {
@@ -243,8 +255,6 @@ void dropUSBSetupPacket(Padded_USB_setup_packet_t *setupPacket)
 }
 
 #endif
-
-#ifdef SVENBERTIL
 static uint8_t newUSBaddress = 0;
 
 void USB_EP0_Handler(uint16_t istr)

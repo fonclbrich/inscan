@@ -94,29 +94,6 @@ typedef struct {
 #define USB6_BDT        ((BDT_TypeDef *) (PMA_BASE + 16*6))
 #define USB7_BDT        ((BDT_TypeDef *) (PMA_BASE + 16*7))
 
-typedef struct {
-    uint8_t bmRequestType;
-    uint8_t bRequest;
-    uint16_t wValue;
-    uint16_t wIndex;
-    uint16_t wLength;
-} USB_setup_packet_t;
-
-typedef struct {
-    uint8_t bmRequestType;
-    uint8_t bRequest;
-    uint16_t padding0;
-
-    uint16_t wValue;
-    uint16_t padding1;
-
-    uint16_t wIndex;
-    uint16_t padding2;
-
-    uint16_t wLength;
-    uint16_t padding3;
-} Padded_USB_setup_packet_t;
-
 #define	USB_SETUP_DEV2HOST				0x80
 #define USB_SETUP_INTERFACE				0x01
 

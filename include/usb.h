@@ -29,6 +29,15 @@ typedef struct
 	uint8_t		bufSizeTX;
 } USB_EP_block_t;
 
+typedef struct {
+    uint8_t bmRequestType;
+    uint8_t bRequest;
+    uint16_t wValue;
+    uint16_t wIndex;
+    uint16_t wLength;
+} __attribute__((packed)) USB_setup_packet_t;
+
+
 /* Device Descriptor */
 typedef struct {
     uint8_t 	bLength;
@@ -82,25 +91,6 @@ typedef struct {
     uint8_t bInterval;
 } __attribute__((packed)) USB_endpoint_descriptor_t;
 
-/* HID Descriptor */
-typedef struct {
-    uint8_t bLength;
-    uint8_t bDescType_HID;
-    uint16_t bcdHID;
-    uint8_t bCountryCode;
-    uint8_t bNumDescriptors;
-    uint8_t bDescTypeClass;
-    uint16_t wDescLength;
-} __attribute__((packed))  USB_HID_descriptor_t;
-
-/* It is useful to combine many descriptors into a single contiguous block */
-typedef struct {
-    USB_configuration_descriptor_t configDesc;
-    USB_interface_descriptor_t interfDesc;
-    USB_HID_descriptor_t HIDdesc;
-    USB_endpoint_descriptor_t endpDesc;
-} USB_combined_descriptor_t;
-
 typedef struct
 {
 	USB_configuration_descriptor_t configDesc;
@@ -145,4 +135,7 @@ int USBhandleCBW(USB_command_block_wrapper *cbw);
 /* uint16_t USBstringLangs[] */
 /* char *USBstrings[] */
 
+uint16_t USBstatusReg(int EPid);
+uint16_t USBglobalReg();
+uint16_t USBaddr();
 #endif /* USB_H_ */
