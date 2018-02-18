@@ -182,11 +182,16 @@ void USBacknowledge(int EPid)
 	USB_EP(EPid) = (USB_EP(EPid) & ~USB_TOGGLE_MASK) | USB_CLEAR_MASK | USB_EP_FLIP_TX;
 }
 
+void USBconfirmSent(int EPid)
+{
+	USB_EP(EPid) = USB_EP(EPid) & ~USB_TOGGLE_MASK & ~USB_EP_CTR_TX;
+}
+
 void USB_LP_CAN1_RX0_IRQHandler()
 {
 	uint16_t ISTR = USB->ISTR;
 
-    if (ISTR & USB_ISTR_RESET)
+    if (0 != ISTR & USB_ISTR_RESET)
     {
         /* Reset Request */
 #ifdef USBAppCallback
@@ -198,6 +203,7 @@ void USB_LP_CAN1_RX0_IRQHandler()
     	return;
     }
 
+    debugSendString("Other stuff.");
     uint16_t event = (ISTR & USB_EP_EA) << 8;
 
     if (event == 0x0000 && (USB_EP(0) & USB_EP_SETUP) != 0)

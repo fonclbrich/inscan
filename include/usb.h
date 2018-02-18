@@ -121,6 +121,7 @@ void USBconfigEPs(USB_EP_block_t *EPs, int nEP);
 int USBepRead(int EPid, void *buf, int len);
 int USBepSend(int EPid, void *src, int len);
 void USBacknowledge(int EPid);
+void USBconfirmSent(int EPid);
 
 uint16_t USBgetEvent();
 

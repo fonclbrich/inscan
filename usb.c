@@ -72,10 +72,16 @@ void USBCallback(uint16_t event)
 		break;
 	}
 
+	case USBtransIn :
+		debugSendString("Sent...\n");
+		USBconfirmSent(0);
+		break;
+
 	default:
 		debugSendString("Other USB event: ");
 		debugSendString(Dhex2str(event));
 		debugSendString("\n");
+		USBdisable();
 		break;
 	}
 }

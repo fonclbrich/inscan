@@ -27,7 +27,7 @@ int debugInit()
     /* Set the baudrate for USART2
     * USART_BRR = bus_frequency / target_baud_rate
     * this example: 36000000/9600 = 3750 */
-    USART2->BRR = 625; //3750;
+    USART2->BRR =  625; //3750;
 
     /* Enable USART1 and its RX- and TX-component */
     USART2->CR1 |= USART_CR1_UE // Usart enable
