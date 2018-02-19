@@ -39,7 +39,10 @@ void dropUSBSetupPacket(USB_setup_packet_t *setupPacket)
 
 void USBCallback(uint16_t event)
 {
-	switch (event)
+	uint8_t what = event & 0x00FF;
+	uint8_t EPid = event >> 8;
+
+	switch (event & 0xFFFF)
 	{
 	case USBresetCmd :
 		debugSendString("Got Reset Command.\n");
@@ -47,18 +50,26 @@ void USBCallback(uint16_t event)
 		USBconfigEPs( 0, 0);
 		USBsetAddress(0);
 		USBresume();
-	    debugSendString("EP0R at reset: ");
+	/*   debugSendString("EP0R at reset: ");
 	    debugSendString(Dhex2str(USBstatusReg(0)));
 	    debugSendString(" ");
 	    debugSendString(Dhex2str(USBaddr()));
 	    debugSendString(" ");
 	    debugSendString(Dhex2str(USBglobalReg()));
 
-	    debugSendString("\n");
+	    debugSendString("\n");*/
 		break;
 
 	case USBsetupCmd :
 	{
+		if (0 != EPid)
+		{
+			debugSendString("Incorrect SETUP on EP");
+			debugSendString(Dhex2str(EPid));
+			debugSendString(" !\n");
+			USBdisable();
+			break;
+		}
 		debugSendString("Got Setup Command.\n");
 
 		USB_setup_packet_t setup;

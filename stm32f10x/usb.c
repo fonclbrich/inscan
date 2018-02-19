@@ -16,6 +16,15 @@ extern const USB_combined_MS_descriptor_t USBcomboMSdesc;
 // extern uint16_t USBstringLangs[];
 extern char *USBstrings[];
 
+void printUSBstate()
+{
+	debugSendString(Dhex2str(USB->EP0R) );
+	debugSendString("  ");
+	debugSendString(Dhex2str(USB->ISTR) );
+	debugSendString("  ");
+	debugSendString(Dhex2str(USB->DADDR) );
+}
+
 uint8_t USBstringIndex[] =
 {
 		0x01,
@@ -70,14 +79,6 @@ void USBinit()
     }
     USB->CNTR &= ~USB_CNTR_FRES;     //Clear forced USB reset
     USB->ISTR = 0x00U;               //Clear any spurious interrupts
-
-	/* Setup the stuff that wont change... */
-	USB_BDT(USB_EP0)->ADDR_TX = USB_BDT(USB_EP0)->ADDR_RX= 0x0040;
-	USB_BDT(USB_EP0)->COUNT_RX = USB_COUNT0_RX_BLSIZE | USB_COUNT0_RX_NUM_BLOCK_1;
-
-    USB->BTABLE = 0x0000U;
-    USB->EP0R = ( ((USB->EP0R & (USB_EP_STAT_TX | USB_EP_STAT_RX)) ^ (USB_RX_VALID | USB_TX_NAK))
-    		|  USB_EP_CONTROL | USB_CLEAR_MASK ) & ~(USB_EP_DTOG_RX | USB_EP_DTOG_TX);
 
     /* Enable CTRM and RESET interrupts */
     USB->CNTR |= (USB_CNTR_CTRM | USB_CNTR_RESETM);
@@ -189,17 +190,33 @@ void USBconfirmSent(int EPid)
 
 void USB_LP_CAN1_RX0_IRQHandler()
 {
+	debugSendString("iE: ");
+	printUSBstate();
+	debugSendString("\n");
+
 	uint16_t ISTR = USB->ISTR;
 
-    if (0 != ISTR & USB_ISTR_RESET)
+    if (0 != (ISTR & USB_ISTR_RESET))
     {
         /* Reset Request */
 #ifdef USBAppCallback
     	USB->ISTR = ~USB_ISTR_RESET; // Clear interrupt
+
+    	/* Setup the stuff that wont change... */
+    	USB_BDT(USB_EP0)->ADDR_TX = USB_BDT(USB_EP0)->ADDR_RX= 0x0040;
+    	USB_BDT(USB_EP0)->COUNT_RX = USB_COUNT0_RX_BLSIZE | USB_COUNT0_RX_NUM_BLOCK_1;
+
+    	USB->BTABLE = 0x0000;
+    	USB->EP0R = ( ((USB->EP0R & (USB_EP_STAT_TX | USB_EP_STAT_RX)) ^ (USB_RX_VALID | USB_TX_NAK))
+    	    		|  USB_EP_CONTROL | USB_CLEAR_MASK ) & ~(USB_EP_DTOG_RX | USB_EP_DTOG_TX);
+
     	USBAppCallback(USBresetCmd);
 #else
 #error "Implementation required for USB Reset without Callback."
 #endif
+    	debugSendString("iX: ");
+    	printUSBstate();
+    	debugSendString("\n");
     	return;
     }
 
@@ -223,6 +240,9 @@ void USB_LP_CAN1_RX0_IRQHandler()
 #else
 #error "Implementation required for USB Reset without Callback."
 #endif
+    debugSendString("iX: ");
+    printUSBstate();
+    debugSendString("\n");
 }
 
 uint16_t USBstatusReg(int EPid)
