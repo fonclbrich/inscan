@@ -10,12 +10,6 @@
 #include <debug.h>
 #include <app_spec.h>
 
-extern const USB_device_descriptor_t USBdevDesc;
-extern const USB_combined_MS_descriptor_t USBcomboMSdesc;
-
-// extern uint16_t USBstringLangs[];
-extern char *USBstrings[];
-
 void printUSBstate()
 {
 	debugSendString(Dhex2str(USB->EP0R) );
@@ -24,13 +18,6 @@ void printUSBstate()
 	debugSendString("  ");
 	debugSendString(Dhex2str(USB->DADDR) );
 }
-
-uint8_t USBstringIndex[] =
-{
-		0x01,
-		0x02,
-		0x03
-};
 
 extern const uint8_t USB_MAX_LUN;
 
@@ -156,7 +143,7 @@ int USBepRead(int EPid, void *buf, int len)
 	return N;
 }
 
-int USBepSend(int EPid, void *buf, int len)
+int USBepSend(int EPid, const void *buf, int len)
 {
 	if ((USB_EP(EPid) & USB_EP_STAT_TX) != USB_TX_NAK )
 	{
@@ -220,21 +207,36 @@ void USB_LP_CAN1_RX0_IRQHandler()
     	return;
     }
 
-    debugSendString("Other stuff.");
     uint16_t event = (ISTR & USB_EP_EA) << 8;
+
+    debugSendString("Other event: ");
+    debugSendString(Dhex2str(ISTR));
+
 
     if (event == 0x0000 && (USB_EP(0) & USB_EP_SETUP) != 0)
     {
     	event |= USBsetupCmd;
+    	debugSendString("\n Before: ");
+    	printUSBstate();
+    	USB->EP0R = USB_EP_CONTROL;
+		// USB->EP0R = USB->EP0R & ~(USB_TOGGLE_MASK | USB_EP_CTR_RX | USB_EP_CTR_TX);
+		// USB->EP0R = USB->EP0R  ^ (USB_RX_NAK | USB_TX_NAK  | USB_EP_DTOG_TX);
+		debugSendString("\n After: ");
+		printUSBstate();
+		debugSendString("\n");
+
     }
     else if ((ISTR & USB_ISTR_DIR) != 0)
     {
     	event |= USBtransOut;
+    	  debugSendString("b");
     }
     else
     {
     	event |= USBtransIn;
+    	  debugSendString("c");
     }
+    debugSendString("\n");
 #ifdef USBAppCallback
     USBAppCallback(event);
 #else

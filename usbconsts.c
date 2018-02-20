@@ -25,12 +25,36 @@ const USB_device_descriptor_t USBdevDesc = {
 
 // uint16_t USBstringLangs[] = {0x0409};
 
-char *USBstrings[] =
+uint8_t USBstringIndex[] =
 {
-		"Starfleet Engineering",	// Manufacturer
-		"Heisenberg Compensator",	// Product
-		"112358"					// Serial #
+		0x00,
+		0x01,
+		0x02,
+		0x03
 };
+
+
+uint16_t LanguageString[] = {0304, 0x0409};
+uint16_t ManufacturerString[] = {0x0300 | (21 * 2 + 2), 'S', 't', 'a', 'r', 'f', 'l', 'e', 'e', 't', ' ', 'E', 'n', 'g', 'i', 'n', 'e', 'e', 'r', 'i', 'n', 'g'};
+uint16_t ProductString[] = {0x0300 | (22 * 2 + 2), 'H', 'e', 'i', 's', 'e', 'n', 'b', 'e', 'r', 'g', ' ', 'C', 'o', 'm', 'p', 'e', 'n', 's', 'a', 't', 'o', 'r'};
+uint16_t SerialNumberString[] = {0x0300 | (6 * 2 + 2) ,'1', '1', '2', '3', '5', '8'};
+
+uint16_t *USBstrings[] =
+{
+	&LanguageString[0],
+	&ManufacturerString[0],
+	&ProductString[0],
+	&SerialNumberString[0]
+};
+
+typedef struct
+{
+	USB_configuration_descriptor_t configDesc;
+	USB_interface_descriptor_t interfDesc;
+	USB_endpoint_descriptor_t inEndpoint;
+	USB_endpoint_descriptor_t outEndpoint;
+
+} USB_combined_MS_descriptor_t;
 
 const USB_combined_MS_descriptor_t USBcomboMSdesc = {
     .configDesc = {

@@ -7,7 +7,7 @@
 
 #include "debug.h"
 #include <stm32f10x.h>
-#include <stm32f10x_usart.h>
+// #include <stm32f10x_usart.h>
 
 int debugInit()
 {
@@ -26,8 +26,8 @@ int debugInit()
 
     /* Set the baudrate for USART2
     * USART_BRR = bus_frequency / target_baud_rate
-    * this example: 36000000/9600 = 3750 */
-    USART2->BRR =  625; //3750;
+    * this example: 36000000/57600 = 625 */
+    USART2->BRR =  625;
 
     /* Enable USART1 and its RX- and TX-component */
     USART2->CR1 |= USART_CR1_UE // Usart enable

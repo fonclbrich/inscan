@@ -3,7 +3,7 @@ STD_PERIPH_LIBS ?= stm32f10x/STM32F10x_StdPeriph_Lib_V3.5.0
 ARCH = stm32f10x
 
 # list of source files
-SOURCES  = inscan.c usb.c # scsi.c usbconsts.c
+SOURCES  = inscan.c usb.c usbconsts.c # scsi.c 
 
 STARTUP = $(ARCH)/startup.o
 LINKUP = $(ARCH)/linkup.ld

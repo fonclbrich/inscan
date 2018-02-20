@@ -21,6 +21,36 @@
 #define USB_EP_ISO          (0x02 << 9)
 #define USB_EP_INTERRUPT    (0x03 << 9)
 
+#define USB_CLEAR_FEATURE		0x0102
+#define USB_GET_DESCRIPTOR		0x0680
+#define USB_SET_ADDRESS			0x0500
+#define USB_SET_CONFIGURATION	0x0900
+#define USB_GET_MAX_LUN			0xFEA1
+
+#define USB_RECIPIENT_DEVICE	0x00
+#define USB_RECIPIENT_INTERFACE	0x01
+#define USB_RECIPIENT_ENDPOINT	0x02
+#define USB_RECIPIENT_OTHER		0x03
+#define USB_TYPE_STANDARD		0x00
+#define USB_TYPE_CLASS			0x20
+#define USB_TYPE_VENDOR			0x40
+#define USB_TYPE_RESERVED		0x60
+#define USB_DIR_DEVICE_TO_HOST	0x80
+#define USB_DIR_HOST_TO_DEVICE	0x80
+
+#define USB_SETUP_CLEAR_FEATURE			0x01
+#define USB_SETUP_SET_FEATURE			0x03
+#define USB_SETUP_SET_ADDRESS			0x05
+#define USB_SETUP_GET_DESCRIPTOR		0x06
+#define USB_SETUP_SET_DESCRIPTOR		0x07
+#define USB_SETUP_GET_CONFIGURATION		0x08
+#define USB_SETUP_SET_CONFIGURATION		0x09
+#define USB_SETUP_SET_HID_IDLE			0x0A
+
+#define USB_SETUP_DESC_DEVICE			0x01
+#define USB_SETUP_DESC_CONFIGURATION	0x02
+#define USB_SETUP_DESC_STRING			0x03
+#define USB_SETUP_DESC_HID				0x22
 typedef struct
 {
 	uint16_t	features;
@@ -93,15 +123,6 @@ typedef struct {
 
 typedef struct
 {
-	USB_configuration_descriptor_t configDesc;
-	USB_interface_descriptor_t interfDesc;
-	USB_endpoint_descriptor_t inEndpoint;
-	USB_endpoint_descriptor_t outEndpoint;
-
-} USB_combined_MS_descriptor_t;
-
-typedef struct
-{
 	uint32_t	signature;
 	uint32_t	tag;
 	uint32_t	dataTransferLength;
@@ -109,7 +130,7 @@ typedef struct
 	uint8_t		LUN;
 	uint8_t		CBlength;
 	uint8_t		commandBlock[0x10];
-} USB_command_block_wrapper;
+} __attribute__((packed)) USB_command_block_wrapper;
 
 
 void USBinit();
@@ -119,22 +140,14 @@ void USBpause();
 void USBsetAddress(uint8_t newAddress);
 void USBconfigEPs(USB_EP_block_t *EPs, int nEP);
 int USBepRead(int EPid, void *buf, int len);
-int USBepSend(int EPid, void *src, int len);
+int USBepSend(int EPid, const void *src, int len);
 void USBacknowledge(int EPid);
 void USBconfirmSent(int EPid);
 
-uint16_t USBgetEvent();
-
-void USBbulkSend(void *data, int length);
-
-/*Must be implemented by application layer code */
-int USBhandleCBW(USB_command_block_wrapper *cbw);
-
-/* const USB_combined_MS_descriptor_t USBcomboMSdesc */
-/* const USB_device_descriptor_t USBdevDesc */
-
-/* uint16_t USBstringLangs[] */
-/* char *USBstrings[] */
+// #ifndef USBAppCallback
+// #error "Implementation required for USB Reset without Callback."
+// uint16_t USBgetEvent();
+// #endif
 
 uint16_t USBstatusReg(int EPid);
 uint16_t USBglobalReg();

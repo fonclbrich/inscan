@@ -36,8 +36,6 @@
 #define USB_TOGGLE_MASK (USB_EP_DTOG_RX | USB_EP_STAT_RX |  USB_EP_DTOG_TX | USB_EP_STAT_TX)
 #define USB_CLEAR_MASK (USB_EP_CTR_RX | USB_EP_CTR_TX)
 
-
-
 typedef struct {
     __IO uint16_t EP0R;
     uint16_t RESERVED0;
@@ -94,26 +92,6 @@ typedef struct {
 #define USB6_BDT        ((BDT_TypeDef *) (PMA_BASE + 16*6))
 #define USB7_BDT        ((BDT_TypeDef *) (PMA_BASE + 16*7))
 
-#define	USB_SETUP_DEV2HOST				0x80
-#define USB_SETUP_INTERFACE				0x01
-
-#define USB_SETUP_SET_ADDRESS			0x05
-#define USB_SETUP_GET_DESCRIPTOR		0x06
-#define USB_SETUP_SET_CONFIG			0x09
-#define USB_SETUP_SET_HID_IDLE			0x0A
-#define USB_SETUP_CLEAR_FEATURE			0x01
-
-#define USB_SETUP_DESC_DEVICE			0x01
-#define USB_SETUP_DESC_CONFIG			0x02
-#define USB_SETUP_DESC_STRING			0x03
-#define USB_SETUP_DESC_HID				0x22
-
-
-#define USB_CLEAR_FEATURE		0x0102
-#define USB_GET_DESCRIPTOR		0x0680
-#define USB_SET_ADDRESS			0x0500
-#define USB_SET_CONFIGURATION	0x0900
-#define USB_GET_MAX_LUN			0xFEA1
 
 /***********************************************************/
 /*********   DESCRIPTOR STRUCTURE DEFINITIONS   ************/
