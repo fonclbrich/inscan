@@ -33,8 +33,15 @@ void dropUSBSetupPacket(USB_setup_packet_t *setupPacket);
 
 void USBCallback(uint16_t event)
 {
+	static uint8_t newAddress = 0;
 	uint8_t what = event & 0x00FF;
 	uint8_t EPid = event >> 8;
+
+#ifdef DEBUG_USB
+		debugSendString("New event: ");
+		debugSendString(Dhex2str(event));
+		debugSendString("\n");
+#endif
 
 	switch (what)
 	{
@@ -45,7 +52,7 @@ void USBCallback(uint16_t event)
 		USBconfigEPs( 0, 0);
 		USBsetAddress(0);
 		USBresume();
-		break;
+		return;
 
 	case USBsetupCmd :
 	{
@@ -74,32 +81,37 @@ void USBCallback(uint16_t event)
 				{
 				case USB_SETUP_DESC_DEVICE :
 #ifdef DEBUG_USB
-					debugSendString("Sending device descriptor.");
+					debugSendString("Sending device descriptor.\n");
 #endif
 					USBepSend(0, &USBdevDesc, sizeof(USBdevDesc));
 					return;
 
 				case USB_SETUP_DESC_CONFIGURATION :
 #ifdef DEBUG_USB
-					debugSendString("Sending configuration descriptor.");
+					debugSendString("Sending configuration descriptor.\n");
 #endif
 					USBepSend(0, &USBcomboMSdesc, setup.wLength < sizeof(USBcomboMSdesc) ? sizeof(USBcomboMSdesc.configDesc) : sizeof(USBcomboMSdesc));
 					return;
 
-				case USB_SETUP_DESC_STRING : ;
+				case USB_SETUP_DESC_STRING :
+				{
 					uint8_t stringIndex = setup.wValue & 0xFF;
 
 					if (stringIndex <= 3)
 					{
 #ifdef DEBUG_USB
-						debugSendString("Sending string descriptor(");
+						debugSendString("Sending string descriptor (");
 						debugSendString(Dhex2str(stringIndex));
-						debugSendString(").\n");
+						debugSendString("). Length: ");
+						debugSendString(Dhex2str(*USBstrings[stringIndex]));
+						debugSendString("\n");
+
 #endif
+
 						USBepSend(0, USBstrings[stringIndex], *USBstrings[stringIndex] & 0xFF);
 						return;
 					}
-
+				}
 				default:
 					break;
 				}
@@ -110,6 +122,18 @@ void USBCallback(uint16_t event)
 				break;
 			}
 			break;
+
+		case USB_DIR_HOST_TO_DEVICE | USB_RECIPIENT_DEVICE :
+			switch (setup.bRequest)
+			{
+			case USB_SETUP_SET_ADDRESS :
+				newAddress = setup.wValue;
+				USBacknowledge(0);
+				return;
+
+			default:
+				break;
+			}
 
 		default:
 			break;
@@ -124,11 +148,22 @@ void USBCallback(uint16_t event)
 	}
 
 	case USBtransIn :
+		if (newAddress != 0)
+		{
+			USBsetAddress(newAddress);
+			newAddress = 0;
 #ifdef DEBUG_USB
-		debugSendString("Sent on EP");
-		debugSendString(Dhex2str(EPid));
-		debugSendString("...\n");
+			debugSendString("New address set to ");
+			debugSendString(Dhex2str(USBgetAddress()));
+			debugSendString("\n");
+		}
+		else
+		{
+			debugSendString("Sent on EP");
+			debugSendString(Dhex2str(EPid));
+			debugSendString("...\n");
 #endif
+		}
 		USBconfirmSent(0);
 		break;
 

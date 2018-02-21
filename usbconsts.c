@@ -34,7 +34,7 @@ uint8_t USBstringIndex[] =
 };
 
 
-uint16_t LanguageString[] = {0304, 0x0409};
+uint16_t LanguageString[] = {0x0304, 0x0409};
 uint16_t ManufacturerString[] = {0x0300 | (21 * 2 + 2), 'S', 't', 'a', 'r', 'f', 'l', 'e', 'e', 't', ' ', 'E', 'n', 'g', 'i', 'n', 'e', 'e', 'r', 'i', 'n', 'g'};
 uint16_t ProductString[] = {0x0300 | (22 * 2 + 2), 'H', 'e', 'i', 's', 'e', 'n', 'b', 'e', 'r', 'g', ' ', 'C', 'o', 'm', 'p', 'e', 'n', 's', 'a', 't', 'o', 'r'};
 uint16_t SerialNumberString[] = {0x0300 | (6 * 2 + 2) ,'1', '1', '2', '3', '5', '8'};

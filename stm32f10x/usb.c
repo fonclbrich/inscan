@@ -96,6 +96,11 @@ void USBsetAddress(uint8_t newAddress)
 	USB->DADDR = (USB->DADDR & USB_DADDR_EF) | newAddress;
 }
 
+uint8_t USBgetAddress()
+{
+	return USB->DADDR & USB_DADDR_ADD;
+}
+
 void USBconfigEPs(USB_EP_block_t *EPs, int nEP)
 {
 	int addrOffs = 0x0040;
@@ -177,9 +182,11 @@ void USBconfirmSent(int EPid)
 
 void USB_LP_CAN1_RX0_IRQHandler()
 {
+#ifdef DEBUG_USB
 	debugSendString("iE: ");
 	printUSBstate();
 	debugSendString("\n");
+#endif
 
 	uint16_t ISTR = USB->ISTR;
 
@@ -201,50 +208,42 @@ void USB_LP_CAN1_RX0_IRQHandler()
 #else
 #error "Implementation required for USB Reset without Callback."
 #endif
+
+#ifdef DEBUG_USB
     	debugSendString("iX: ");
     	printUSBstate();
     	debugSendString("\n");
+#endif
     	return;
     }
 
     uint16_t event = (ISTR & USB_EP_EA) << 8;
 
-    debugSendString("Other event: ");
-    debugSendString(Dhex2str(ISTR));
-
-
     if (event == 0x0000 && (USB_EP(0) & USB_EP_SETUP) != 0)
     {
     	event |= USBsetupCmd;
-    	debugSendString("\n Before: ");
-    	printUSBstate();
-    	USB->EP0R = USB_EP_CONTROL;
-		// USB->EP0R = USB->EP0R & ~(USB_TOGGLE_MASK | USB_EP_CTR_RX | USB_EP_CTR_TX);
-		// USB->EP0R = USB->EP0R  ^ (USB_RX_NAK | USB_TX_NAK  | USB_EP_DTOG_TX);
-		debugSendString("\n After: ");
-		printUSBstate();
-		debugSendString("\n");
-
+    	USB->EP0R = USB_EP_CONTROL | USB_EP_DTOG_RX;
     }
     else if ((ISTR & USB_ISTR_DIR) != 0)
     {
     	event |= USBtransOut;
-    	  debugSendString("b");
     }
     else
     {
     	event |= USBtransIn;
-    	  debugSendString("c");
     }
-    debugSendString("\n");
+
 #ifdef USBAppCallback
     USBAppCallback(event);
 #else
 #error "Implementation required for USB Reset without Callback."
 #endif
+
+#ifdef DEBUG_USB
     debugSendString("iX: ");
     printUSBstate();
     debugSendString("\n");
+#endif
 }
 
 uint16_t USBstatusReg(int EPid)

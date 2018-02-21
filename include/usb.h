@@ -21,11 +21,11 @@
 #define USB_EP_ISO          (0x02 << 9)
 #define USB_EP_INTERRUPT    (0x03 << 9)
 
-#define USB_CLEAR_FEATURE		0x0102
+/* #define USB_CLEAR_FEATURE		0x0102
 #define USB_GET_DESCRIPTOR		0x0680
 #define USB_SET_ADDRESS			0x0500
 #define USB_SET_CONFIGURATION	0x0900
-#define USB_GET_MAX_LUN			0xFEA1
+#define USB_GET_MAX_LUN			0xFEA1 */
 
 #define USB_RECIPIENT_DEVICE	0x00
 #define USB_RECIPIENT_INTERFACE	0x01
@@ -36,7 +36,7 @@
 #define USB_TYPE_VENDOR			0x40
 #define USB_TYPE_RESERVED		0x60
 #define USB_DIR_DEVICE_TO_HOST	0x80
-#define USB_DIR_HOST_TO_DEVICE	0x80
+#define USB_DIR_HOST_TO_DEVICE	0x00
 
 #define USB_SETUP_CLEAR_FEATURE			0x01
 #define USB_SETUP_SET_FEATURE			0x03
@@ -138,6 +138,7 @@ void USBdisable();
 void USBresume();
 void USBpause();
 void USBsetAddress(uint8_t newAddress);
+uint8_t USBgetAddress();
 void USBconfigEPs(USB_EP_block_t *EPs, int nEP);
 int USBepRead(int EPid, void *buf, int len);
 int USBepSend(int EPid, const void *src, int len);
