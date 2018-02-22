@@ -83,7 +83,7 @@ const USB_combined_MS_descriptor_t USBcomboMSdesc = {
     	.bDescriptorType    = 0x05,
     	.bEndpointAddress   = 0x81, // Endpoint 1, direction IN
     	.bmAttributes       = 0x02, // Bulk endpoint
-    	.wMaxPacketSize     = 0x40,
+    	.wMaxPacketSize     = 0x80,
     	.bInterval          = 10    // polling interval / 2 ms
     },
     .outEndpoint = {
@@ -91,9 +91,26 @@ const USB_combined_MS_descriptor_t USBcomboMSdesc = {
         .bDescriptorType    = 0x05,
         .bEndpointAddress   = 0x02,	// Endpoint 2, direction OUT
         .bmAttributes       = 0x02, // Bulk endpoint
-        .wMaxPacketSize     = 0x40,
+        .wMaxPacketSize     = 0x80,
         .bInterval          = 10    // polling interval / 2 ms
     }
+};
+
+USB_EP_block_t EPConfig[] =
+{
+	{
+		.features	= USB_EP_BULK,
+		.EPid		= 1,
+		.bufSizeRX	= 0,
+		.bufSizeTX	= 0x80
+	},
+
+	{
+		.features	= USB_EP_BULK,
+		.EPid		= 2,
+		.bufSizeRX	= 0x80,
+		.bufSizeTX 	= 0
+	}
 };
 
 const uint8_t USB_MAX_LUN = 0;

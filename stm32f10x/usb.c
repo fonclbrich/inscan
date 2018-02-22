@@ -14,12 +14,16 @@ void printUSBstate()
 {
 	debugSendString(Dhex2str(USB->EP0R) );
 	debugSendString("  ");
+	debugSendString(Dhex2str(USB->EP1R) );
+	debugSendString("  ");
+	debugSendString(Dhex2str(USB->EP2R) );
+	debugSendString("  ");
 	debugSendString(Dhex2str(USB->ISTR) );
 	debugSendString("  ");
 	debugSendString(Dhex2str(USB->DADDR) );
 }
 
-extern const uint8_t USB_MAX_LUN;
+/* extern const uint8_t USB_MAX_LUN;
 
 void USBmemRead(void *src, void *dest, int length)
 {
@@ -27,7 +31,7 @@ void USBmemRead(void *src, void *dest, int length)
 	uint16_t *di = (uint16_t *)dest;
 
 	while (length-- != 0) *di++ = *si++;
-}
+}*/
 
 void USBinit()
 {
@@ -103,39 +107,75 @@ uint8_t USBgetAddress()
 
 void USBconfigEPs(USB_EP_block_t *EPs, int nEP)
 {
-	int addrOffs = 0x0040;
+	int addrOffs = 0x0080;
 
 	while (nEP-- != 0)
 	{
-		uint16_t epr = EPs[nEP].EPid | EPs[nEP].features | USB_CLEAR_MASK;
+		uint16_t epr = (EPs[nEP].EPid & 0x0F) | (EPs[nEP].features & 0x0600) | USB_CLEAR_MASK;
 
 		if (EPs[nEP].bufSizeRX != 0)
 		{
-			USB_BDT(EPs[nEP].EPid)->ADDR_RX = (addrOffs += 0x0040);
-			USB_BDT(EPs[nEP].EPid)->COUNT_RX = USB_COUNT0_RX_BLSIZE | USB_COUNT0_RX_NUM_BLOCK_1;
+			uint16_t cntRx = (EPs[nEP].bufSizeRX & 0x03E0);
+			USB_BDT(EPs[nEP].EPid)->ADDR_RX = addrOffs;
+			addrOffs += cntRx;
+			USB_BDT(EPs[nEP].EPid)->COUNT_RX = USB_COUNT0_RX_BLSIZE | (cntRx << 5);
 
 			/* Allow incoming data */
 			epr |= USB_RX_VALID;
+
+#ifdef DEBUG_USB
+			debugSendString("Setup RX for EP");
+			debugSendString(Dhex2str(EPs[nEP].EPid));
+			debugSendString(" with COUNT_RX ");
+			debugSendString(Dhex2str(USB_BDT(EPs[nEP].EPid)->COUNT_RX));
+			debugSendString(" and with ADDR_RX ");
+			debugSendString(Dhex2str(USB_BDT(EPs[nEP].EPid)->ADDR_RX));
+			debugSendString("\n");
+#endif
 		}
 
 		if (EPs[nEP].bufSizeTX != 0)
 		{
-			USB_BDT(EPs[nEP].EPid)->ADDR_TX = (addrOffs += 0x0040);
+			USB_BDT(EPs[nEP].EPid)->ADDR_TX = addrOffs;
+			addrOffs += EPs[nEP].bufSizeTX;
+			USB_BDT(EPs[nEP].EPid)->COUNT_TX = EPs[nEP].bufSizeTX;
 
 			/* Set to not acknowledge, since we do not know what to send yet. */
-			epr |= USB_RX_NAK;
+			epr |= USB_TX_NAK;
+#ifdef DEBUG_USB
+			debugSendString("Setup TX for EP");
+			debugSendString(Dhex2str(EPs[nEP].EPid));
+			debugSendString(" with buffersize ");
+			debugSendString(Dhex2str(USB_BDT(EPs[nEP].EPid)->COUNT_TX));
+			debugSendString(" and with ADDR_TX ");
+			debugSendString(Dhex2str(USB_BDT(EPs[nEP].EPid)->ADDR_TX));
+			debugSendString("\n");
+#endif
 		}
 
 		USB_EP(EPs[nEP].EPid) = (USB_EP(EPs[nEP].EPid) ^ (USB_TOGGLE_MASK & epr)) | epr;
+#ifdef DEBUG_USB
+			debugSendString("Setup EP");
+			debugSendString(Dhex2str(EPs[nEP].EPid));
+			debugSendString("R: ");
+			debugSendString(Dhex2str(USB_EP(EPs[nEP].EPid)));
+			debugSendString("\n");
+#endif
 	}
 
 }
 
 int USBepRead(int EPid, void *buf, int len)
 {
-	if ((USB_EP(EPid) & USB_EP_STAT_RX) != USB_RX_NAK) return 0;
+	if ((USB_EP(EPid) & USB_EP_STAT_RX) != USB_RX_NAK)
+	{
+		debugSendString("Failed reading on EP");
+		debugSendString(Dhex2str(EPid));
+		debugSendString(" \n");
+		return 0;
+	}
 
-	int N = len < USB_COUNT0_RX_COUNT0_RX ? len : USB_COUNT0_RX_COUNT0_RX;
+	int N = len < USB_BDT(EPid)->COUNT_RX & USB_COUNT0_RX_COUNT0_RX ? len : (USB_BDT(EPid)->COUNT_RX & USB_COUNT0_RX_COUNT0_RX);
 
 	uint32_t *src = (uint32_t *)(PMA_BASE + (USB_BDT(EPid)->ADDR_RX << 1U));
 	uint16_t *dst = (uint16_t *) buf;
@@ -197,12 +237,51 @@ void USB_LP_CAN1_RX0_IRQHandler()
     	USB->ISTR = ~USB_ISTR_RESET; // Clear interrupt
 
     	/* Setup the stuff that wont change... */
-    	USB_BDT(USB_EP0)->ADDR_TX = USB_BDT(USB_EP0)->ADDR_RX= 0x0040;
-    	USB_BDT(USB_EP0)->COUNT_RX = USB_COUNT0_RX_BLSIZE | USB_COUNT0_RX_NUM_BLOCK_1;
+  //  	USB_BDT(USB_EP0)->ADDR_TX = USB_BDT(USB_EP0)->ADDR_RX= 0x0040;
+   // 	USB_BDT(USB_EP0)->COUNT_RX = USB_COUNT0_RX_BLSIZE | USB_COUNT0_RX_NUM_BLOCK_1;
 
-    	USB->BTABLE = 0x0000;
-    	USB->EP0R = ( ((USB->EP0R & (USB_EP_STAT_TX | USB_EP_STAT_RX)) ^ (USB_RX_VALID | USB_TX_NAK))
-    	    		|  USB_EP_CONTROL | USB_CLEAR_MASK ) & ~(USB_EP_DTOG_RX | USB_EP_DTOG_TX);
+    	//USB->BTABLE = 0x0000;
+    	//USB->EP0R = ( ((USB->EP0R & (USB_EP_STAT_TX | USB_EP_STAT_RX)) ^ (USB_RX_VALID | USB_TX_NAK))
+    	  //  		|  USB_EP_CONTROL | USB_CLEAR_MASK ) & ~(USB_EP_DTOG_RX | USB_EP_DTOG_TX);
+
+
+
+        USB->DADDR = USB_DADDR_EF;
+
+        /* Enable endpoints  */
+        // Endpoint zero (control)
+        USB_BDT(USB_EP0)->ADDR_TX = 0x0040;
+        USB_BDT(USB_EP0)->ADDR_RX = 0x0080;
+
+        // Endpoint one
+        USB_BDT(USB_EP1)->ADDR_TX = 0x00C0;
+
+        USB_BDT(USB_EP2)->ADDR_RX = 0x0100;
+
+        /* Set block size to 32 bytes and number of blocks to 2 */
+        USB_BDT(USB_EP0)->COUNT_RX = USB_COUNT0_RX_BLSIZE | USB_COUNT0_RX_NUM_BLOCK_1;
+        USB_BDT(USB_EP2)->COUNT_RX = USB_COUNT0_RX_BLSIZE | USB_COUNT0_RX_NUM_BLOCK_1;
+
+        /* Set Buffer Description Table address */
+        USB->BTABLE = 0x0000U;
+
+
+        /*
+         * Set the endpoint types.
+         * Also, start with TX NAK, because we have nothing prepared to send
+         */
+
+        USB->EP0R = ( ((USB->EP0R & (USB_EP_STAT_TX | USB_EP_STAT_RX)) ^ (USB_RX_VALID | USB_TX_NAK))
+        		|  USB_EP_CONTROL | USB_CLEAR_MASK ) & ~(USB_EP_DTOG_RX | USB_EP_DTOG_TX);
+
+
+        USB->EP1R = ( ( (USB->EP1R & (USB_EP_STAT_TX | USB_EP_STAT_RX )) ^ (USB_RX_VALID | USB_TX_NAK))
+        		|  USB_EP_BULK | USB_CLEAR_MASK | 0x0001) & ~( USB_EP_DTOG_RX | USB_EP_DTOG_TX | 0x000E);
+
+        USB->EP2R = ( ( (USB->EP2R & (USB_EP_STAT_TX | USB_EP_STAT_RX )) ^ (USB_RX_VALID | USB_TX_NAK))
+        		|  USB_EP_BULK | USB_CLEAR_MASK | 0x0002) & ~( USB_EP_DTOG_RX | USB_EP_DTOG_TX | 0x000D);
+
+
 
     	USBAppCallback(USBresetCmd);
 #else
@@ -234,7 +313,7 @@ void USB_LP_CAN1_RX0_IRQHandler()
     }
 
 #ifdef USBAppCallback
-    USBAppCallback(event);
+    if (0 != (ISTR & USB_ISTR_CTR) ) USBAppCallback(event);
 #else
 #error "Implementation required for USB Reset without Callback."
 #endif

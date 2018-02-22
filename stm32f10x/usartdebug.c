@@ -79,7 +79,7 @@ void debugSend(char c)
 }
 
 #ifndef USARTDEBUGBUFFERSIZE
-#define USARTDEBUGBUFFERSIZE 0x1000
+#define USARTDEBUGBUFFERSIZE 0x4000
 #endif
 
 static char usart_db_buf[USARTDEBUGBUFFERSIZE];

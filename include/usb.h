@@ -55,8 +55,8 @@ typedef struct
 {
 	uint16_t	features;
 	uint8_t		EPid;
-	uint8_t		bufSizeRX;
-	uint8_t		bufSizeTX;
+	uint16_t	bufSizeRX;
+	uint16_t	bufSizeTX;
 } USB_EP_block_t;
 
 typedef struct {
