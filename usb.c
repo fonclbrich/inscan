@@ -20,11 +20,11 @@ typedef struct
 
 extern const USB_device_descriptor_t USBdevDesc;
 extern const USB_combined_MS_descriptor_t USBcomboMSdesc;
-extern uint16_t *USBstrings[];
+extern uint16_t *USBstringDesc[];
 extern USB_EP_block_t EPConfig;
 
 #ifdef DEBUG_USB
-void dropUSBSetupPacket(USB_setup_packet_t *setupPacket);
+void dumpUSBSetupPacket(USB_setup_packet_t *setupPacket);
 #endif
 
 void USBCallback(uint16_t event)
@@ -85,7 +85,7 @@ void USBCallback(uint16_t event)
 				case USB_SETUP_DESC_CONFIGURATION :
 #ifdef DEBUG_USB
 					debugSendString("Sending configuration descriptor.\n");
-					dropUSBSetupPacket(&setup);
+					dumpUSBSetupPacket(&setup);
 #endif
 					USBepSend(0, &USBcomboMSdesc, setup.wLength < sizeof(USBcomboMSdesc) ? sizeof(USBcomboMSdesc.configDesc) : sizeof(USBcomboMSdesc));
 					return;
@@ -100,12 +100,12 @@ void USBCallback(uint16_t event)
 						debugSendString("Sending string descriptor (");
 						debugSendString(Dhex2str(stringIndex));
 						debugSendString("). Length: ");
-						debugSendString(Dhex2str(*USBstrings[stringIndex] & 0xFF));
+						debugSendString(Dhex2str(*USBstringDesc[stringIndex] & 0xFF));
 						debugSendString("\n");
 
 #endif
 
-						USBepSend(0, USBstrings[stringIndex], *USBstrings[stringIndex] & 0xFF);
+						USBepSend(0, USBstringDesc[stringIndex], *USBstringDesc[stringIndex] & 0xFF);
 						return;
 					}
 				}
@@ -146,7 +146,7 @@ void USBCallback(uint16_t event)
 
 		debugSendString("Unhandeled Setup Command.\n");
 #ifdef DEBUG_USB
-		dropUSBSetupPacket(&setup);
+		dumpUSBSetupPacket(&setup);
 #endif
 		USBdisable();
 		break;
@@ -182,7 +182,7 @@ void USBCallback(uint16_t event)
 }
 
 #ifdef DEBUG_USB
-void dropUSBSetupPacket(USB_setup_packet_t *setupPacket)
+void dumpUSBSetupPacket(USB_setup_packet_t *setupPacket)
 {
 	char numBuf[0x10];
 	numBuf[0xF] = 0;

@@ -97,5 +97,44 @@ typedef struct {
 /*********   DESCRIPTOR STRUCTURE DEFINITIONS   ************/
 /***********************************************************/
 
+// Remove
+
+#include <usb.h>
+
+typedef struct {
+    uint8_t bmRequestType;
+    uint8_t bRequest;
+    uint16_t padding0;
+
+    uint16_t wValue;
+    uint16_t padding1;
+
+    uint16_t wIndex;
+    uint16_t padding2;
+
+    uint16_t wLength;
+    uint16_t padding3;
+} Padded_USB_setup_packet_t;
+
+#define USB_CLEAR_FEATURE		0x0102
+#define USB_GET_DESCRIPTOR		0x0680
+#define USB_SET_ADDRESS			0x0500
+#define USB_SET_CONFIGURATION	0x0900
+#define USB_GET_MAX_LUN			0xFEA1
+
+typedef struct
+{
+	USB_configuration_descriptor_t configDesc;
+	USB_interface_descriptor_t interfDesc;
+	USB_endpoint_descriptor_t inEndpoint;
+	USB_endpoint_descriptor_t outEndpoint;
+
+} USB_combined_MS_descriptor_t;
+
+#define USB_SETUP_DESC_CONFIG	0x02
+
+extern const USB_device_descriptor_t USBdevDesc;
+extern const USB_combined_MS_descriptor_t USBcomboMSdesc;
+
 #endif
 

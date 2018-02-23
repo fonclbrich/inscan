@@ -23,7 +23,21 @@ void printUSBstate()
 	debugSendString(Dhex2str(USB->DADDR) );
 }
 
-/* extern const uint8_t USB_MAX_LUN;
+uint8_t USBstringIndex[] =
+{
+		0x01,
+		0x02,
+		0x03
+};
+
+char *USBstrings[] =
+{
+		"Starfleet Engineering",	// Manufacturer
+		"Heisenberg Compensator",	// Product
+		"112358"					// Serial #
+};
+//#define USB_MAX_LUN 0
+extern const uint8_t USB_MAX_LUN;
 
 void USBmemRead(void *src, void *dest, int length)
 {
@@ -31,7 +45,7 @@ void USBmemRead(void *src, void *dest, int length)
 	uint16_t *di = (uint16_t *)dest;
 
 	while (length-- != 0) *di++ = *si++;
-}*/
+}
 
 void USBinit()
 {
@@ -175,7 +189,7 @@ int USBepRead(int EPid, void *buf, int len)
 		return 0;
 	}
 
-	int N = len < USB_BDT(EPid)->COUNT_RX & USB_COUNT0_RX_COUNT0_RX ? len : (USB_BDT(EPid)->COUNT_RX & USB_COUNT0_RX_COUNT0_RX);
+	int N = len < (USB_BDT(EPid)->COUNT_RX & USB_COUNT0_RX_COUNT0_RX) ? len : (USB_BDT(EPid)->COUNT_RX & USB_COUNT0_RX_COUNT0_RX);
 
 	uint32_t *src = (uint32_t *)(PMA_BASE + (USB_BDT(EPid)->ADDR_RX << 1U));
 	uint16_t *dst = (uint16_t *) buf;
@@ -220,6 +234,88 @@ void USBconfirmSent(int EPid)
 	USB_EP(EPid) = USB_EP(EPid) & ~USB_TOGGLE_MASK & ~USB_EP_CTR_TX;
 }
 
+void USB_EP0_Handler(uint16_t istr);
+void USB_EP1_Handler(uint16_t istr);
+void USB_EP2_Handler(uint16_t istr);
+
+typedef void (* EndpointHandler)(uint16_t istr);
+
+EndpointHandler EPHandlers[] =
+{
+	&USB_EP0_Handler,
+	&USB_EP1_Handler,
+	&USB_EP2_Handler,
+};
+
+void USBreset(void)
+{
+#ifdef DEBUG_USB
+	debugSendString("Resetting USB.\n");
+#endif
+
+    /* Enable device (and set the device address to zero */
+    USB->DADDR = USB_DADDR_EF;
+
+    /* Enable endpoints  */
+    // Endpoint zero (control)
+    USB_BDT(USB_EP0)->ADDR_TX = 0x0040;
+    USB_BDT(USB_EP0)->ADDR_RX = 0x0080;
+
+    // Endpoint one
+    USB_BDT(USB_EP1)->ADDR_TX = 0x00C0;
+
+    USB_BDT(USB_EP2)->ADDR_RX = 0x0100;
+
+    /* Set block size to 32 bytes and number of blocks to 2 */
+    USB_BDT(USB_EP0)->COUNT_RX = USB_COUNT0_RX_BLSIZE | USB_COUNT0_RX_NUM_BLOCK_1;
+    USB_BDT(USB_EP2)->COUNT_RX = USB_COUNT0_RX_BLSIZE | USB_COUNT0_RX_NUM_BLOCK_1;
+
+    /* Set Buffer Description Table address */
+    USB->BTABLE = 0x0000U;
+
+
+    /*
+     * Set the endpoint types.
+     * Also, start with TX NAK, because we have nothing prepared to send
+     */
+
+    USB->EP0R = ( ((USB->EP0R & (USB_EP_STAT_TX | USB_EP_STAT_RX)) ^ (USB_RX_VALID | USB_TX_NAK))
+    		|  USB_EP_CONTROL | USB_CLEAR_MASK ) & ~(USB_EP_DTOG_RX | USB_EP_DTOG_TX);
+
+
+    USB->EP1R = ( ( (USB->EP1R & (USB_EP_STAT_TX | USB_EP_STAT_RX )) ^ (USB_RX_VALID | USB_TX_NAK))
+    		|  USB_EP_BULK | USB_CLEAR_MASK | 0x0001) & ~( USB_EP_DTOG_RX | USB_EP_DTOG_TX | 0x000E);
+
+    USB->EP2R = ( ( (USB->EP2R & (USB_EP_STAT_TX | USB_EP_STAT_RX )) ^ (USB_RX_VALID | USB_TX_NAK))
+    		|  USB_EP_BULK | USB_CLEAR_MASK | 0x0002) & ~( USB_EP_DTOG_RX | USB_EP_DTOG_TX | 0x000D);
+
+}
+
+void USB_LP_CAN1_RX0_IRQHandler()
+{
+	debugSendString("iE: ");
+	printUSBstate();
+	debugSendString("\n");
+
+	uint16_t ISTR = USB->ISTR;
+
+    if (ISTR & USB_ISTR_RESET)
+    {
+        /* Reset Request */
+        USB->ISTR = ~USB_ISTR_RESET; // Clear interrupt
+        USBreset();
+
+    }
+
+    /* Correct transfer: transfer control to the right endpoint handler */
+    else if (ISTR & USB_ISTR_CTR) (*EPHandlers[ISTR & USB_EP_EA])(ISTR);
+    debugSendString("iX: ");
+    printUSBstate();
+    debugSendString("\n");
+
+}
+
+#ifdef SVENBERTIL
 void USB_LP_CAN1_RX0_IRQHandler()
 {
 #ifdef DEBUG_USB
@@ -324,6 +420,7 @@ void USB_LP_CAN1_RX0_IRQHandler()
     debugSendString("\n");
 #endif
 }
+#endif
 
 uint16_t USBstatusReg(int EPid)
 {
@@ -337,7 +434,6 @@ uint16_t USBglobalReg()
 
 uint16_t USBaddr() {return USB->DADDR;}
 
-#ifdef SVENBERTIL
 #ifdef DEBUG_USB
 void dropUSBSetupPacket(Padded_USB_setup_packet_t *setupPacket)
 {
@@ -663,7 +759,7 @@ void USB_EP2_Handler(uint16_t istr)
 
 		/* Call application Handler to decide what to do */
 
-		if (USBhandleCBW(&CBW) != 0)
+//		if (USBhandleCBW(&CBW) != 0)
 		{
 			NVIC_DisableIRQ(USB_LP_CAN1_RX0_IRQn);
 
@@ -698,4 +794,4 @@ void USBbulkSend(void *data, int length)
 
 	USB->EP1R = (USB->EP1R & ~USB_TOGGLE_MASK) | USB_CLEAR_MASK | USB_EP_FLIP_TX;
 }
-#endif
+

@@ -25,7 +25,7 @@ const USB_device_descriptor_t USBdevDesc = {
 
 // uint16_t USBstringLangs[] = {0x0409};
 
-uint8_t USBstringIndex[] =
+uint8_t USBstringDescIndex[] =
 {
 		0x00,
 		0x01,
@@ -39,7 +39,7 @@ uint16_t ManufacturerString[] = {0x0300 | (21 * 2 + 2), 'S', 't', 'a', 'r', 'f',
 uint16_t ProductString[] = {0x0300 | (22 * 2 + 2), 'H', 'e', 'i', 's', 'e', 'n', 'b', 'e', 'r', 'g', ' ', 'C', 'o', 'm', 'p', 'e', 'n', 's', 'a', 't', 'o', 'r'};
 uint16_t SerialNumberString[] = {0x0300 | (6 * 2 + 2) ,'1', '1', '2', '3', '5', '8'};
 
-uint16_t *USBstrings[] =
+uint16_t *USBstringDesc[] =
 {
 	&LanguageString[0],
 	&ManufacturerString[0],
